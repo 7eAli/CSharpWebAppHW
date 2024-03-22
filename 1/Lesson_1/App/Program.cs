@@ -1,4 +1,9 @@
 
+using App.Abstractions;
+using App.Repo;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+
 namespace App
 {
     public class Program
@@ -13,6 +18,15 @@ namespace App
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+            builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
+            
+            builder.Host.ConfigureContainer<ContainerBuilder>(cb =>
+            {
+                cb.RegisterType<ProductRepository>().As<IProductRepository>();
+            });
+            //  builder.Services.AddSingleton<IProductRepository, ProductRepository>();
 
             var app = builder.Build();
 

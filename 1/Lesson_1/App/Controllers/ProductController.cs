@@ -1,7 +1,7 @@
-﻿using App.Models;
+﻿using App.Abstractions;
+using App.Models;
+using App.Models.DTO;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
 
 namespace App.Controllers
 {
@@ -9,86 +9,40 @@ namespace App.Controllers
     [Route("[controller]")]
     public class ProductController : ControllerBase
     {
-        [HttpGet(template: "getProducts")]
+        private readonly IProductRepository _productRepository;
+
+        public ProductController(IProductRepository productRepository)
+        {
+            _productRepository = productRepository;
+        }
+
+        [HttpGet(template: "get_products")]
         public IActionResult GetProducs()
         {
-            try
-            {
-                using (var context = new ProductContext())
-                {
-                    var products = context.Products.Select(x => new Product()
-                    {
-                        Id = x.Id,
-                        Name = x.Name,
-                        Description = x.Description
-                    });
-                    return Ok(products);
-                }
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
+            var products = _productRepository.GetProducts();
+            return Ok(products);
         }
 
-        [HttpPost(template:"postProduct")]
-        public IActionResult PostProducts([FromQuery] string name, string description, int price, int groupId)
+        [HttpPost(template: "post_product")]
+        public IActionResult PostProducts([FromBody] ProductDto productEntity)
         {
-            try
-            {
-                using (var context = new ProductContext())
-                {
-                    if (!context.Products.Any(x => x.Name.ToLower().Equals(name.ToLower())))
-                    {
-                        context.Add(new Product()
-                        {
-                            Name = name,
-                            Description = description,
-                            Cost = price,
-                            CategoryId = groupId
-                        });
-                        context.SaveChanges();
-                        return Ok();
-                    }
-                    else
-                    {
-                        return StatusCode(409);
-                    }
-                }
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
+            var product = _productRepository.AddProduct(productEntity);
+            return Ok(product);
         }
 
-        [HttpPost(template:"postCategory")]
-        public IActionResult PostCategory([FromQuery] string name, string description)
+        [HttpGet(template: "get_categories")]
+        public IActionResult GetCategories()
         {
-            try
-            {
-                using (var context = new ProductContext())
-                {
-                    if (!context.Category.Any(x => x.Name.ToLower().Equals(name.ToLower())))
-                    {
-                        context.Add(new Category()
-                        {
-                            Name = name,
-                            Description = description,                            
-                        });
-                        context.SaveChanges();
-                        return Ok();
-                    }
-                    else
-                    {
-                        return StatusCode(409);
-                    }
-                }
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
+            var categories = _productRepository.GetGroups();
+            return Ok(categories);
+        }
+
+
+        [HttpPost(template: "post_category")]
+        public IActionResult PostCategory([FromBody] CategoryDto categoryEntity)
+        {
+            var category = _productRepository.AddGroup(categoryEntity);
+            return Ok(category);            
         }
 
         [HttpPost(template: "postStorage")]
@@ -122,7 +76,7 @@ namespace App.Controllers
             }
         }
 
-        [HttpPatch(template:"changePrice")]
+        [HttpPatch(template: "changePrice")]
         public IActionResult ChangePrice([FromQuery] int productId, int price)
         {
             try
@@ -151,7 +105,7 @@ namespace App.Controllers
             }
         }
 
-        [HttpDelete(template:"deleteProduct")]
+        [HttpDelete(template: "deleteProduct")]
         public IActionResult DeleteProduct([FromQuery] int productId)
         {
             try
