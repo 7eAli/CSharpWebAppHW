@@ -3,15 +3,25 @@
 namespace App.Models
 {
     public class ProductContext : DbContext
-    {        
+    {
+        //"Host=localhost;Username=postgres;Password=example;Database=Asp_les_1"
         public DbSet<Product> Products { get; set; }
         public DbSet<Category> Category { get; set; }
         public DbSet<Storage> Storages { get; set; }
+        public string _connectionString;
+        public ProductContext()
+        {
+
+        }
+
+        public ProductContext(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseNpgsql("Host=localhost;Username=postgres;Password=example;Database=Asp_les_1");
-
+            optionsBuilder.UseNpgsql(_connectionString);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

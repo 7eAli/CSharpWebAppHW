@@ -2,6 +2,7 @@
 using App.Models;
 using App.Models.DTO;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace App.Controllers
 {
@@ -10,16 +11,20 @@ namespace App.Controllers
     public class ProductController : ControllerBase
     {
         private readonly IProductRepository _productRepository;
+        
 
         public ProductController(IProductRepository productRepository)
         {
-            _productRepository = productRepository;
+            _productRepository = productRepository;            
         }
 
         [HttpGet(template: "get_products")]
         public IActionResult GetProducs()
         {
+            
+            
             var products = _productRepository.GetProducts();
+            
             return Ok(products);
         }
 
@@ -45,116 +50,59 @@ namespace App.Controllers
             return Ok(category);            
         }
 
-        [HttpPost(template: "postStorage")]
-        public IActionResult PostStorage([FromQuery] string name, string description, int productId, int amount)
+        [HttpPost(template: "post_storage")]
+        public IActionResult PostStorage([FromBody] StorageDto storageEntity)
         {
-            try
-            {
-                using (var context = new ProductContext())
-                {
-                    if (!context.Storages.Any(x => x.Name.ToLower().Equals(name.ToLower())))
-                    {
-                        context.Add(new Storage()
-                        {
-                            Name = name,
-                            Description = description,
-                            ProductId = productId,
-                            Amount = amount
-                        });
-                        context.SaveChanges();
-                        return Ok();
-                    }
-                    else
-                    {
-                        return StatusCode(409);
-                    }
-                }
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
+            var storage = _productRepository.AddStorage(storageEntity);
+            return Ok(storage);            
         }
 
-        [HttpPatch(template: "changePrice")]
-        public IActionResult ChangePrice([FromQuery] int productId, int price)
+        [HttpPatch(template: "change_price")]
+        public IActionResult ChangePrice([FromBody] int productId, int price)
         {
-            try
-            {
-                using (var context = new ProductContext())
-                {
-                    if (context.Products.Any(x => x.Id == productId))
-                    {
-                        var product = context.Products.Find(productId);
-                        if (product != null)
-                        {
-                            product.Cost = price;
-                        }
-                        context.SaveChanges();
-                        return Ok();
-                    }
-                    else
-                    {
-                        return StatusCode(409);
-                    }
-                }
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
+            var change = _productRepository.ChangePrice(price, productId);
+            return Ok(change);            
         }
 
-        [HttpDelete(template: "deleteProduct")]
-        public IActionResult DeleteProduct([FromQuery] int productId)
+        [HttpDelete(template: "delete_product")]
+        public IActionResult DeleteProduct([FromBody] int productId)
         {
-            try
-            {
-                using (var context = new ProductContext())
-                {
-                    if (context.Products.Any(x => x.Id == productId))
-                    {
-                        var product = context.Products.Find(productId);
-                        context.Products.Remove(product);
-                        context.SaveChanges();
-                        return Ok();
-                    }
-                    else
-                    {
-                        return StatusCode(409);
-                    }
-                }
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
+            var deletion = _productRepository.DeleteProduct(productId);
+            return Ok(deletion);
         }
-        [HttpDelete(template: "deleteCategory")]
-        public IActionResult DeleteCategory([FromQuery] int categoryId)
+        [HttpDelete(template: "delete_category")]
+        public IActionResult DeleteCategory([FromBody] int categoryId)
         {
-            try
-            {
-                using (var context = new ProductContext())
-                {
-                    if (context.Category.Any(x => x.Id == categoryId))
-                    {
-                        var category = context.Category.Find(categoryId);
-                        context.Category.Remove(category);
-                        context.SaveChanges();
-                        return Ok();
-                    }
-                    else
-                    {
-                        return StatusCode(409);
-                    }
-                }
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
+            var deletion = _productRepository.DeleteGroup(categoryId);
+            return Ok(deletion);            
         }
 
+        [HttpDelete(template: "delete_storage")]
+        public IActionResult DeleteStorage([FromBody] int storageId)
+        {
+            var deletion = _productRepository.DeleteStorage(storageId);
+            return Ok(deletion);
+        }
+
+        [HttpGet(template:"get_product_csv")]
+        public FileContentResult GetProductCsv()
+        {
+            var content = _productRepository.GetProductCsv();
+            return File(new System.Text.UTF8Encoding().GetBytes(content), "text/csv", "report.csv");
+        }
+
+        [HttpGet(template:"get_stats_csv")]
+        public ActionResult<string> GetStatsCsv()
+        {
+            var content = _productRepository.GetStatsCsv();
+
+            string fileName = string.Empty;
+
+            fileName = "stats" + DateTime.Now.ToBinary().ToString() + ".csv";
+
+            System.IO.File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", fileName), content);
+
+            return "https://" + Request.Host.ToString() + "/static/" + fileName;
+        }
     }
 }

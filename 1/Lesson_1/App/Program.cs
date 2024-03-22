@@ -1,8 +1,10 @@
 
 using App.Abstractions;
+using App.Models;
 using App.Repo;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 
 namespace App
 {
@@ -21,12 +23,21 @@ namespace App
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 
             builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
+
+            var config = new ConfigurationBuilder();
+            config.AddJsonFile("appsettings.json");
+            var cfg = config.Build();
             
+
             builder.Host.ConfigureContainer<ContainerBuilder>(cb =>
             {
                 cb.RegisterType<ProductRepository>().As<IProductRepository>();
+                cb.Register(c => new ProductContext(cfg.GetConnectionString("db"))).InstancePerDependency();
             });
             //  builder.Services.AddSingleton<IProductRepository, ProductRepository>();
+
+            builder.Services.AddMemoryCache(o => o.TrackStatistics = true);
+            
 
             var app = builder.Build();
 
@@ -36,6 +47,18 @@ namespace App
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            var staticFilesPath = Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles");
+            Directory.CreateDirectory(staticFilesPath);
+
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+
+                FileProvider = new PhysicalFileProvider(
+                    staticFilesPath),
+                RequestPath = "/static"
+            });
 
             app.UseHttpsRedirection();
 
