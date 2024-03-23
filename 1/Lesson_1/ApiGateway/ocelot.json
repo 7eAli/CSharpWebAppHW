@@ -1,0 +1,59 @@
+{
+  "Routes": [
+    {
+      "DownstreamPathTemplate": "/Product/{method}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7078
+        }
+      ],
+      "UpstreamPathTemplate": "/Product/{method}",
+      "UpstreamHttpMethod": [ "Get", "Post" ],
+      "SwaggerKey": "products"
+    },
+    {
+      "DownstreamPathTemplate": "/graphql/{method}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7216
+        }
+      ],
+      "UpstreamPathTemplate": "/graphql/{method}",
+      "UpstreamHttpMethod": [ "Get", "Post" ],
+      "SwaggerKey": "productsGql"
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "https://localhost:6696"
+  },
+
+  "SwaggerEndPoints": [
+    {
+      "Key": "products",
+      "TransformByOcelotConfig": false,
+      "Config": [
+        {
+          "Name": "App",
+          "Version": "v1",
+          "Url": "https://localhost:7078/swagger/v1/swagger.json"
+        }
+      ]
+    },
+    {
+      "Key": "productsGql",
+      "TransformByOcelotConfig": false,
+      "Config": [
+        {
+          "Name": "Lesson_3_app",
+          "Version": "v1",
+          "Url": "https://localhost:7216/swagger/v1/swagger.json"
+        }
+      ]
+    }
+  ]
+
+}
